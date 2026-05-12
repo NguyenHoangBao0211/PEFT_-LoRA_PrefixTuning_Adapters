@@ -1,0 +1,13 @@
+{
+  "method": "LoRA",
+  "model_name": "bert-base-uncased",
+  "adapter_path": "/kaggle/working/peft_outputs/lora_adapter",
+  "trainable_params": 296450,
+  "trainable_pct": 0.2700395193203643,
+  "best_val_f1": 0.8999758097938318,
+  "best_val_acc": 0.9,
+  "test_f1": 0.9079531828275352,
+  "test_acc": 0.908,
+  "training_time_s": 4531.876900672913,
+  "peak_mem_gb": 1.544480256
+}

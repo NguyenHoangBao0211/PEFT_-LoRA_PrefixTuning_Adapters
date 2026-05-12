@@ -1,0 +1,13 @@
+{
+  "method": "Prefix-Tuning",
+  "model_name": "bert-base-uncased",
+  "adapter_path": "/kaggle/working/peft_outputs/prefix_tuning_adapter",
+  "trainable_params": 370178,
+  "trainable_pct": 0.3369728442005311,
+  "best_val_f1": 0.8919688780737706,
+  "best_val_acc": 0.892,
+  "test_f1": 0.8993066980911829,
+  "test_acc": 0.8993333333333333,
+  "training_time_s": 4433.085391759872,
+  "peak_mem_gb": 1.808864768
+}

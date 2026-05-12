@@ -1,0 +1,14 @@
+{
+  "method": "Bottleneck Adapter",
+  "model_name": "bert-base-uncased",
+  "adapter_path": "/kaggle/working/peft_outputs/bottleneck_adapter",
+  "adapter_config": "Pfeiffer, reduction_factor=16, bottleneck_dim=48",
+  "trainable_params": 2109308,
+  "trainable_pct": 1.8902040860657296,
+  "best_val_f1": 0.8953279824456505,
+  "best_val_acc": 0.8953333333333333,
+  "test_f1": 0.9066397711748635,
+  "test_acc": 0.9066666666666666,
+  "training_time_s": 4820.9986255168915,
+  "peak_mem_gb": 2.454847488
+}

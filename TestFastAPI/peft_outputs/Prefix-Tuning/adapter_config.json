@@ -1,0 +1,17 @@
+{
+  "auto_mapping": null,
+  "base_model_name_or_path": "bert-base-uncased",
+  "encoder_hidden_size": 128,
+  "inference_mode": true,
+  "modules_to_save": null,
+  "num_attention_heads": 12,
+  "num_layers": 12,
+  "num_transformer_submodules": 1,
+  "num_virtual_tokens": 20,
+  "peft_type": "PREFIX_TUNING",
+  "peft_version": "0.18.1",
+  "prefix_projection": false,
+  "revision": null,
+  "task_type": "SEQ_CLS",
+  "token_dim": 768
+}

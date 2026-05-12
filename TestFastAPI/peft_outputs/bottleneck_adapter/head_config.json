@@ -1,0 +1,21 @@
+{
+  "config": {
+    "activation_function": "tanh",
+    "bias": true,
+    "dropout_prob": null,
+    "head_type": "classification",
+    "label2id": {
+      "negative": 0,
+      "positive": 1
+    },
+    "layers": 2,
+    "num_labels": 2,
+    "use_pooler": false
+  },
+  "hidden_size": 768,
+  "model_class": "BertAdapterModel",
+  "model_name": "bert-base-uncased",
+  "model_type": "bert",
+  "name": "bottleneck_adapter",
+  "version": "0.2.1"
+}

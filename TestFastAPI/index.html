@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PEFT Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07090d;--surface:#0f1117;--surface2:#161b24;
+  --border:#1c2233;--border2:#242d3f;
+  --text:#dde3f0;--muted:#4a5568;--muted2:#6b7a96;
+  --lora:#38bdf8;--prefix:#fb923c;--ia3:#34d399;
+  --accent:#818cf8;--err:#f87171;
+  --mono:'IBM Plex Mono',monospace;
+  --sans:'IBM Plex Sans',sans-serif;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);
+     font-size:13px;line-height:1.65;min-height:100vh}
+
+/* ── grid noise bg ── */
+body::after{
+  content:'';position:fixed;inset:0;
+  background-image:radial-gradient(circle at 20% 20%,rgba(56,189,248,.04) 0%,transparent 50%),
+                   radial-gradient(circle at 80% 80%,rgba(129,140,248,.04) 0%,transparent 50%);
+  pointer-events:none;z-index:0
+}
+
+.wrap{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:0 20px 80px}
+
+/* ── HEADER ── */
+header{padding:40px 0 28px;border-bottom:1px solid var(--border);margin-bottom:28px}
+.eyebrow{
+  font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:12px;
+  display:flex;align-items:center;gap:8px
+}
+.eyebrow::before{content:'';width:24px;height:1px;background:var(--accent)}
+h1{font-family:var(--sans);font-weight:700;font-size:28px;
+   letter-spacing:-.03em;color:#fff;line-height:1.15;margin-bottom:6px}
+h1 em{font-style:normal}
+h1 .c-l{color:var(--lora)}
+h1 .c-p{color:var(--prefix)}
+h1 .c-i{color:var(--ia3)}
+.sub{color:var(--muted2);font-size:12px;font-family:var(--sans)}
+
+/* ── STATUS ── */
+.status{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:9px 14px;margin-bottom:20px;
+  background:var(--surface);border:1px solid var(--border);border-radius:5px;
+  font-size:11px
+}
+.led{width:7px;height:7px;border-radius:50%;background:var(--err);flex-shrink:0;
+     transition:background .3s,box-shadow .3s}
+.status.ok .led{background:var(--ia3);box-shadow:0 0 8px var(--ia3);animation:blink 2.4s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+#st-msg{color:var(--muted2)}
+.api-link{color:var(--accent);text-decoration:none;font-size:10px;margin-left:auto}
+.api-link:hover{text-decoration:underline}
+#st-device{
+  font-size:10px;padding:2px 8px;border-radius:3px;
+  background:rgba(129,140,248,.1);border:1px solid rgba(129,140,248,.2);color:var(--accent)
+}
+
+/* ── TWO-COL LAYOUT ── */
+.layout{display:grid;grid-template-columns:1fr 360px;gap:24px;align-items:start}
+@media(max-width:760px){.layout{grid-template-columns:1fr}}
+
+/* ── LEFT PANEL ── */
+.panel-label{
+  font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px
+}
+
+.textarea-box{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:5px;overflow:hidden;
+  transition:border-color .2s;margin-bottom:12px
+}
+.textarea-box:focus-within{border-color:rgba(129,140,248,.45)}
+textarea{
+  width:100%;min-height:130px;background:transparent;
+  border:none;outline:none;resize:vertical;
+  color:var(--text);font-family:var(--mono);font-size:13px;
+  line-height:1.7;padding:14px 16px
+}
+.tfoot{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:7px 14px;border-top:1px solid var(--border);
+  font-size:10px;color:var(--muted)
+}
+.tfoot button{
+  background:none;border:none;cursor:pointer;
+  color:var(--muted);font-family:var(--mono);font-size:10px
+}
+.tfoot button:hover{color:var(--text)}
+
+/* method checkboxes */
+.methods{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.mtog{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 13px;border-radius:20px;cursor:pointer;
+  font-size:11px;font-family:var(--mono);
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--muted);transition:all .18s;user-select:none
+}
+.mtog .pip{width:6px;height:6px;border-radius:50%}
+.mtog[data-m="LoRA"] .pip        {background:var(--lora)}
+.mtog[data-m="Prefix-Tuning"] .pip{background:var(--prefix)}
+.mtog[data-m="Bottleneck Adapter"] .pip{background:var(--ia3)}
+.mtog.on{color:var(--text)}
+.mtog[data-m="LoRA"].on        {border-color:rgba(56,189,248,.5);box-shadow:0 0 12px rgba(56,189,248,.15)}
+.mtog[data-m="Prefix-Tuning"].on{border-color:rgba(251,146,60,.5);box-shadow:0 0 12px rgba(251,146,60,.15)}
+.mtog[data-m="Bottleneck Adapter"].on{border-color:rgba(52,211,153,.5);box-shadow:0 0 12px rgba(52,211,153,.15)}
+
+/* run button */
+.btn-run{
+  width:100%;padding:12px;border:none;border-radius:5px;cursor:pointer;
+  background:linear-gradient(135deg,var(--accent),#6366f1);
+  color:#fff;font-family:var(--sans);font-weight:600;font-size:14px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:opacity .2s,transform .1s;margin-bottom:24px
+}
+.btn-run:hover{opacity:.88}
+.btn-run:active{transform:scale(.99)}
+.btn-run:disabled{opacity:.38;cursor:not-allowed}
+.spin{
+  display:none;width:14px;height:14px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.3);border-top-color:#fff;
+  animation:rot .65s linear infinite
+}
+@keyframes rot{to{transform:rotate(360deg)}}
+.btn-run.loading .lbl{display:none}
+.btn-run.loading .spin{display:block}
+
+/* ── RESULTS ── */
+.results{display:flex;flex-direction:column;gap:12px}
+.rcard{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:5px;overflow:hidden;
+  animation:fadeUp .28s ease-out both
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.rcard[data-m="LoRA"]          {border-left:3px solid var(--lora)}
+.rcard[data-m="Prefix-Tuning"] {border-left:3px solid var(--prefix)}
+.rcard[data-m="Bottleneck Adapter"] {border-left:3px solid var(--ia3)}
+
+.rcard-head{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;border-bottom:1px solid var(--border)
+}
+.rcard-name{font-family:var(--sans);font-weight:600;font-size:13px;flex:1}
+.rcard[data-m="LoRA"] .rcard-name        {color:var(--lora)}
+.rcard[data-m="Prefix-Tuning"] .rcard-name{color:var(--prefix)}
+.rcard[data-m="Bottleneck Adapter"] .rcard-name{color:var(--ia3)}
+.badge{
+  padding:2px 10px;border-radius:20px;font-size:10px;
+  font-weight:600;text-transform:uppercase;letter-spacing:.06em
+}
+.badge.positive{background:rgba(52,211,153,.12);color:var(--ia3);border:1px solid rgba(52,211,153,.25)}
+.badge.negative{background:rgba(248,113,113,.12);color:var(--err);border:1px solid rgba(248,113,113,.25)}
+.lat{font-size:10px;color:var(--muted);background:var(--bg);
+     border:1px solid var(--border);padding:1px 7px;border-radius:3px}
+
+.rcard-body{padding:14px}
+.prow{margin-bottom:10px}
+.prow:last-child{margin-bottom:0}
+.plabel{
+  display:flex;justify-content:space-between;
+  font-size:10px;color:var(--muted2);margin-bottom:4px;
+  text-transform:uppercase;letter-spacing:.05em
+}
+.pbar{height:5px;background:var(--border2);border-radius:3px;overflow:hidden}
+.pfill{height:100%;border-radius:3px;width:0%;transition:width .55s cubic-bezier(.16,1,.3,1)}
+.pfill.pos{background:linear-gradient(90deg,#059669,var(--ia3))}
+.pfill.neg{background:linear-gradient(90deg,#dc2626,var(--err))}
+
+.err-box{
+  border:1px solid rgba(248,113,113,.25);border-left:3px solid var(--err);
+  background:rgba(248,113,113,.06);border-radius:5px;
+  padding:12px 14px;color:var(--err);font-size:11px;line-height:1.6
+}
+
+/* ── RIGHT PANEL ── */
+.side{display:flex;flex-direction:column;gap:16px}
+
+/* method info cards */
+.info-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:5px;
+  overflow:hidden
+}
+.info-head{
+  display:flex;align-items:center;gap:8px;
+  padding:9px 12px;border-bottom:1px solid var(--border)
+}
+.info-dot{width:8px;height:8px;border-radius:50%}
+.info-title{font-family:var(--sans);font-weight:600;font-size:12px}
+.info-body{padding:10px 12px;font-size:11px;color:var(--muted2);line-height:1.7}
+.info-body code{
+  font-family:var(--mono);font-size:10px;
+  background:var(--surface2);padding:1px 5px;border-radius:3px;color:var(--text)
+}
+.info-stat{
+  display:flex;justify-content:space-between;
+  padding:4px 12px;border-top:1px solid var(--border);
+  font-size:10px
+}
+.info-stat .k{color:var(--muted)}
+.info-stat .v{color:var(--text)}
+
+/* examples */
+.ex-list{display:flex;flex-direction:column;gap:5px}
+.ex-pill{
+  background:var(--surface);border:1px solid var(--border);border-radius:4px;
+  font-size:11px;color:var(--muted2);padding:7px 10px;cursor:pointer;
+  text-align:left;font-family:var(--mono);line-height:1.4;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:border-color .15s,color .15s
+}
+.ex-pill:hover{border-color:var(--accent);color:var(--text)}
+
+/* compare table */
+.cmp-box{
+  background:var(--surface);border:1px solid var(--border);border-radius:5px;
+  overflow:hidden;margin-top:4px;
+  animation:fadeUp .35s ease-out .15s both
+}
+.cmp-head{
+  padding:9px 14px;border-bottom:1px solid var(--border);
+  font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)
+}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{
+  padding:8px 14px;text-align:left;
+  font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);border-bottom:1px solid var(--border);font-weight:400
+}
+td{padding:9px 14px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.015)}
+.td-name{font-family:var(--sans);font-weight:600;font-size:12px}
+
+/* history */
+.hist-list{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.hist-item{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 10px;background:var(--surface);
+  border:1px solid var(--border);border-radius:4px;cursor:pointer;
+  font-size:11px;transition:border-color .15s
+}
+.hist-item:hover{border-color:var(--border2)}
+.hist-txt{flex:1;color:var(--muted2);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.hist-cons{font-size:10px;padding:1px 7px;border-radius:10px}
+.hist-cons.positive{background:rgba(52,211,153,.1);color:var(--ia3)}
+.hist-cons.negative{background:rgba(248,113,113,.1);color:var(--err)}
+.hist-time{font-size:10px;color:var(--muted);white-space:nowrap}
+
+.section-hd{
+  font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px;
+  display:flex;align-items:center;gap:8px
+}
+.section-hd::after{content:'';flex:1;height:1px;background:var(--border)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HEADER -->
+<header>
+  <div class="eyebrow">PEFT Benchmark</div>
+  <h1><em class="c-l">LoRA</em> · <em class="c-p">Prefix-Tuning</em> · <em class="c-i">Bottleneck Adapter</em></h1>
+  <p class="sub">So sánh trực tiếp 3 phương pháp PEFT — BERT / IMDB Sentiment</p>
+</header>
+
+<!-- STATUS -->
+<div class="status" id="statusBar">
+  <div class="led" id="led"></div>
+  <span id="st-msg">Đang kết nối API...</span>
+  <span id="st-device" style="display:none"></span>
+  <a class="api-link" id="apiLink" href="#" target="_blank"></a>
+</div>
+
+<!-- TWO-COL -->
+<div class="layout">
+
+  <!-- LEFT -->
+  <div>
+    <!-- input -->
+    <div class="panel-label">Nhập văn bản</div>
+    <div class="textarea-box">
+      <textarea id="txt" placeholder="Nhập tiếng Anh để phân tích...
+Ví dụ: This movie was absolutely fantastic!" oninput="onType()"></textarea>
+      <div class="tfoot">
+        <span id="cc">0 ký tự</span>
+        <button onclick="clrTxt()">xóa ×</button>
+      </div>
+    </div>
+
+    <!-- methods -->
+    <div class="panel-label">Phương pháp</div>
+    <div class="methods">
+      <div class="mtog on" data-m="LoRA"          onclick="tog(this)"><div class="pip"></div>LoRA</div>
+      <div class="mtog on" data-m="Prefix-Tuning" onclick="tog(this)"><div class="pip"></div>Prefix-Tuning</div>
+      <div class="mtog on" data-m="Bottleneck Adapter" onclick="tog(this)"><div class="pip"></div>Bottleneck Adapter</div>
+    </div>
+
+    <!-- run -->
+    <button class="btn-run" id="btnRun" onclick="runAll()">
+      <span class="lbl">▶ Chạy Inference</span>
+      <div class="spin"></div>
+    </button>
+
+    <!-- results -->
+    <div class="results" id="results"></div>
+    <div id="cmpWrap"></div>
+
+    <!-- history -->
+    <div id="histWrap" style="display:none;margin-top:32px">
+      <div class="section-hd">Lịch sử</div>
+      <div class="hist-list" id="histList"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT SIDEBAR -->
+  <div class="side">
+
+    <!-- method info -->
+    <div>
+      <div class="section-hd" style="margin-bottom:10px">Chi tiết phương pháp</div>
+
+      <div class="info-card" style="margin-bottom:10px">
+        <div class="info-head">
+          <div class="info-dot" style="background:var(--lora)"></div>
+          <div class="info-title" style="color:var(--lora)">LoRA</div>
+        </div>
+        <div class="info-body">
+          Thêm ma trận low-rank <code>ΔW = A·B</code> song song với weight gốc.
+          Chỉ huấn luyện A và B — weight gốc đóng băng.
+        </div>
+        <div class="info-stat"><span class="k">Target modules</span><span class="v">query, value</span></div>
+        <div class="info-stat"><span class="k">Rank</span><span class="v">r = 8</span></div>
+        <div class="info-stat"><span class="k">α (scaling)</span><span class="v">16</span></div>
+      </div>
+
+      <div class="info-card" style="margin-bottom:10px">
+        <div class="info-head">
+          <div class="info-dot" style="background:var(--prefix)"></div>
+          <div class="info-title" style="color:var(--prefix)">Prefix-Tuning</div>
+        </div>
+        <div class="info-body">
+          Thêm <code>N</code> soft token học được vào đầu mỗi layer.
+          Model gốc hoàn toàn đóng băng — chỉ prefix được cập nhật.
+        </div>
+        <div class="info-stat"><span class="k">Virtual tokens</span><span class="v">20</span></div>
+        <div class="info-stat"><span class="k">Encoder hidden</span><span class="v">128</span></div>
+        <div class="info-stat"><span class="k">Scope</span><span class="v">Tất cả layers</span></div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-head">
+          <div class="info-dot" style="background:var(--ia3)"></div>
+          <div class="info-title" style="color:var(--ia3)">Bottleneck Adapter</div>
+        </div>
+        <div class="info-body">
+          Thêm bottleneck module <code>down→ReLU→up</code> sau FFN mỗi layer.
+          Chỉ train adapter + classification head — BERT đóng băng.
+        </div>
+        <div class="info-stat"><span class="k">Kiến trúc</span><span class="v">Pfeiffer 2020</span></div>
+        <div class="info-stat"><span class="k">Reduction factor</span><span class="v">16 → bottleneck 48</span></div>
+        <div class="info-stat"><span class="k">Trainable</span><span class="v">~1.89% params</span></div>
+      </div>
+    </div>
+
+    <!-- examples -->
+    <div>
+      <div class="section-hd">Ví dụ nhanh</div>
+      <div class="ex-list" id="exList">
+        <button class="ex-pill" onclick="setEx(this)">This movie was absolutely fantastic!</button>
+        <button class="ex-pill" onclick="setEx(this)">Terrible waste of time. I fell asleep halfway through.</button>
+        <button class="ex-pill" onclick="setEx(this)">One of the best performances I have ever seen.</button>
+        <button class="ex-pill" onclick="setEx(this)">Absolutely dreadful. The worst film in years.</button>
+        <button class="ex-pill" onclick="setEx(this)">Not bad, not great. A forgettable two hours.</button>
+        <button class="ex-pill" onclick="setEx(this)">Surprisingly good! Ended up really enjoying it.</button>
+      </div>
+    </div>
+
+    <!-- adapter status -->
+    <div>
+      <div class="section-hd">Adapter status</div>
+      <div class="info-card">
+        <div class="info-body" id="adapterStatus" style="padding:10px 12px">
+          <span style="color:var(--muted)">Chưa kiểm tra...</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /side -->
+</div><!-- /layout -->
+
+</div><!-- /wrap -->
+
+<script>
+/* ── config ── */
+const BASE = () => 'http://localhost:8000';
+const COLORS = {'LoRA':'var(--lora)','Prefix-Tuning':'var(--prefix)','Bottleneck Adapter':'var(--ia3)'};
+let _hist = [];
+
+/* ── init ── */
+window.addEventListener('DOMContentLoaded', () => { checkHealth(); });
+
+/* ── helpers ── */
+function onType() {
+  const v = document.getElementById('txt').value;
+  document.getElementById('cc').textContent = v.length + ' ký tự';
+}
+function clrTxt() {
+  document.getElementById('txt').value = '';
+  onType();
+}
+function setEx(btn) {
+  document.getElementById('txt').value = btn.textContent.trim();
+  onType();
+}
+function tog(el) { el.classList.toggle('on'); }
+function active() {
+  return [...document.querySelectorAll('.mtog.on')].map(e => e.dataset.m);
+}
+
+/* ── health ── */
+async function checkHealth() {
+  const bar = document.getElementById('statusBar');
+  const led = document.getElementById('led');
+  const msg = document.getElementById('st-msg');
+  const dv  = document.getElementById('st-device');
+  const lnk = document.getElementById('apiLink');
+
+  msg.textContent = 'Đang kết nối...';
+  bar.classList.remove('ok');
+
+  try {
+    const r = await fetch(BASE() + '/health', { signal: AbortSignal.timeout(5000) });
+    const d = await r.json();
+    bar.classList.add('ok');
+    msg.textContent = 'API online · ' + BASE();
+    lnk.href = BASE() + '/docs';
+    lnk.textContent = 'Swagger /docs ↗';
+    if (d.device) { dv.textContent = d.device.toUpperCase(); dv.style.display = ''; }
+    loadAdapterStatus();
+  } catch {
+    msg.textContent = 'Không kết nối được · Chạy: uvicorn main:app --reload --port 8000';
+    lnk.textContent = '';
+    dv.style.display = 'none';
+  }
+}
+
+/* ── adapter status ── */
+async function loadAdapterStatus() {
+  try {
+    const r = await fetch(BASE() + '/methods', { signal: AbortSignal.timeout(5000) });
+    const d = await r.json();
+    let html = '';
+    for (const [name, info] of Object.entries(d.methods)) {
+      const ok = info.config_ok;
+      const col = ok ? 'var(--ia3)' : 'var(--err)';
+      const icon = ok ? '✓' : '✗';
+      const loaded = info.loaded ? ' · <span style="color:var(--accent)">loaded</span>' : '';
+      html += `<div style="display:flex;justify-content:space-between;margin-bottom:5px">
+        <span style="color:${COLORS[name]||'var(--text)'}">${name}</span>
+        <span style="color:${col}">${icon}${loaded}</span>
+      </div>`;
+    }
+    document.getElementById('adapterStatus').innerHTML = html;
+  } catch {}
+}
+
+/* ── run ── */
+async function runAll() {
+  const text = document.getElementById('txt').value.trim();
+  if (!text) { alert('Nhập văn bản trước!'); return; }
+  const methods = active();
+  if (!methods.length) { alert('Chọn ít nhất 1 phương pháp!'); return; }
+
+  const btn = document.getElementById('btnRun');
+  btn.disabled = true; btn.classList.add('loading');
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('cmpWrap').innerHTML = '';
+
+  try {
+    const res = await fetch(BASE() + '/predict', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ text, methods }),
+      signal: AbortSignal.timeout(60000),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    render(data, methods);
+  } catch (e) {
+    document.getElementById('results').innerHTML =
+      `<div class="err-box">❌ ${e.message}</div>`;
+  } finally {
+    btn.disabled = false; btn.classList.remove('loading');
+  }
+}
+
+/* ── render ── */
+function render(data, methods) {
+  const box = document.getElementById('results');
+  const rows = [];
+
+  methods.forEach((m, i) => {
+    const r = data.results[m];
+    if (!r) return;
+    const card = document.createElement('div');
+    card.className = 'rcard'; card.dataset.m = m;
+    card.style.animationDelay = (i * 70) + 'ms';
+
+    if (r.error) {
+      card.innerHTML = `
+        <div class="rcard-head">
+          <div class="rcard-name">${m}</div>
+          <span class="badge" style="color:var(--err);border-color:rgba(248,113,113,.3)">ERROR</span>
+        </div>
+        <div class="rcard-body" style="color:var(--err);font-size:11px;line-height:1.7">${r.error}</div>`;
+    } else {
+      const posW = Math.round(r.probs.positive * 100);
+      const negW = Math.round(r.probs.negative * 100);
+      card.innerHTML = `
+        <div class="rcard-head">
+          <div class="rcard-name">${m}</div>
+          <span class="badge ${r.label}">${r.label}</span>
+          <span class="lat">${r.latency_ms}ms</span>
+        </div>
+        <div class="rcard-body">
+          <div class="prow">
+            <div class="plabel"><span>Positive</span><span>${(r.probs.positive*100).toFixed(2)}%</span></div>
+            <div class="pbar"><div class="pfill pos" data-w="${posW}"></div></div>
+          </div>
+          <div class="prow">
+            <div class="plabel"><span>Negative</span><span>${(r.probs.negative*100).toFixed(2)}%</span></div>
+            <div class="pbar"><div class="pfill neg" data-w="${negW}"></div></div>
+          </div>
+        </div>`;
+      rows.push({ m, label: r.label, conf: r.probs[r.label], lat: r.latency_ms });
+    }
+    box.appendChild(card);
+  });
+
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.pfill[data-w]').forEach(el => {
+      el.style.width = el.dataset.w + '%';
+    });
+  });
+
+  if (rows.length >= 2) renderCmp(rows);
+  addHist(data.text, rows);
+}
+
+/* ── compare ── */
+function renderCmp(rows) {
+  const pos = rows.filter(r => r.label === 'positive').length;
+  const cons = pos > rows.length / 2 ? 'positive' : pos < rows.length / 2 ? 'negative' : 'split';
+  const consBadge = cons !== 'split'
+    ? `<span class="badge ${cons}" style="font-size:10px;padding:1px 8px">${cons}</span>`
+    : `<span style="color:var(--muted2)">SPLIT</span>`;
+
+  const trs = rows.map(r => `<tr>
+    <td class="td-name" style="color:${COLORS[r.m]||'var(--text)'}">${r.m}</td>
+    <td><span class="badge ${r.label}" style="font-size:10px">${r.label}</span></td>
+    <td>${(r.conf*100).toFixed(2)}%</td>
+    <td>${r.lat}ms</td>
+  </tr>`).join('');
+
+  document.getElementById('cmpWrap').innerHTML = `
+    <div class="cmp-box">
+      <div class="cmp-head">Kết quả so sánh &nbsp;·&nbsp; Đồng thuận: ${consBadge}</div>
+      <table>
+        <thead><tr><th>Phương pháp</th><th>Nhãn</th><th>Confidence</th><th>Latency</th></tr></thead>
+        <tbody>${trs}</tbody>
+      </table>
+    </div>`;
+}
+
+/* ── history ── */
+function addHist(text, rows) {
+  if (!rows.length) return;
+  const pos = rows.filter(r => r.label === 'positive').length;
+  const cons = pos > rows.length / 2 ? 'positive' : pos < rows.length / 2 ? 'negative' : 'split';
+  const t = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  _hist.unshift({ text, cons, t });
+  if (_hist.length > 6) _hist.pop();
+
+  const wrap = document.getElementById('histWrap');
+  const list = document.getElementById('histList');
+  wrap.style.display = 'block';
+  list.innerHTML = _hist.map((h, i) => `
+    <div class="hist-item" onclick="loadH(${i})">
+      <span class="hist-txt">${h.text}</span>
+      <span class="hist-cons ${h.cons}">${h.cons}</span>
+      <span class="hist-time">${h.t}</span>
+    </div>`).join('');
+}
+
+function loadH(i) {
+  document.getElementById('txt').value = _hist[i].text;
+  onType();
+}
+</script>
+</body>
+</html>
